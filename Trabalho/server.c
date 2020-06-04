@@ -53,6 +53,7 @@ int main(int argc, char **argv)
 		else if(!pid)
 		{
 			printf("%s\n", buffer);
+			printf("%d -> o meu pid\n%d -> o pid do meu pai\n", getpid(), getppid());
 			_exit(0);
 		}
 		
