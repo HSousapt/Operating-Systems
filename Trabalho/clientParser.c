@@ -24,7 +24,7 @@ void send_request(char *code)
 }
 
 
-void handle_cmd_shell(char buffer[])
+void handle_cmd_shell()
 {
 	char buffer[50];
 	while(readln(0, buffer))

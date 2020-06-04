@@ -8,6 +8,6 @@
 #include <sys/types.h>
 
 
-void handle_cmd_shell(char*);
+void handle_cmd_shell();
 
 void handle_cmd_line(char**, int);

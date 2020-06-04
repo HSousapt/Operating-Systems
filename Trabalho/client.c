@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 	sprintf(pid,"%d", client_pid);
 	if(argc < 2)
 	{
-		handle_cmd_shell(buffer);
+		handle_cmd_shell();
 	}
 	else if(argc > 2)
 	{
