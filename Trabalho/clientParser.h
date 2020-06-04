@@ -8,10 +8,6 @@
 #include <sys/types.h>
 
 
-ssize_t readln(int, char*);
-
-void send_request(char*);
-
 void handle_cmd_shell(char*);
 
 void handle_cmd_line(char**, int);

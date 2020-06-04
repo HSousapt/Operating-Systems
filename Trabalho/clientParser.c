@@ -26,6 +26,7 @@ void send_request(char *code)
 
 void handle_cmd_shell(char buffer[])
 {
+	char buffer[50];
 	while(readln(0, buffer))
 	{
 		char *request = malloc(sizeof(char)*30);
@@ -37,8 +38,11 @@ void handle_cmd_shell(char buffer[])
 
 void handle_cmd_line(char **cmds, int n)
 {
+	char *request = malloc(sizeof(char)*50);
 	for(int i = 0; i < n; i++)
 	{
-		printf("%s\n", cmds[i]);
+		strcat(request, cmds[i]);
 	}
+	send_request(request);
+	free(request);
 }
