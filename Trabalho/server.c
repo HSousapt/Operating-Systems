@@ -7,13 +7,8 @@ int main(int argc, char **argv)
 	mkfifo("request", 0700);
 
 	Tasks *tasks = init_tasks(10);
-	for(int i = 0; i < 10; i++)
-	{
-		printf("%d e %d\n",tasks[i].taskTime, tasks[i].pipeTime);
-	}
 	while(1)
 	{
-		int task_counter = 0;
 		request = open("request", O_RDONLY);
 		if(request < 0)
 		{
@@ -24,7 +19,7 @@ int main(int argc, char **argv)
 		readln(request, buffer);
 		close(request);
 
-		handle_client_request(buffer);
+		handle_client_request(buffer, tasks);
 		memset(buffer, 0, 30);
 	}
 

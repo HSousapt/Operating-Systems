@@ -14,43 +14,45 @@ ssize_t readln(int f,char* buff)
 }
 
 
-void handle_client_request(char* request)
+void handle_client_request(char* request, Tasks *tasks)
 {
 	char* cmd = strtok(request, " ");
 	
 	if(!strcmp(cmd, "-i"))
 	{
 		int time = atoi(strtok(NULL, " "));
-		printf("%d\n", time);
+		set_task_timer(tasks, time);
+		printf("taskTime -> %d\n", tasks->taskTime);
 	}
-	if(!strcmp(cmd, "-m"))
+	else if(!strcmp(cmd, "-m"))
 	{
 		int time = atoi(strtok(NULL, " "));
-		printf("%d\n", time);
+		set_pipe_timer(tasks, time);
+		printf("pipeTime -> %d\n", tasks->pipeTime);
 	}
-	if(!strcmp(cmd, "-e"))
+	else if(!strcmp(cmd, "-e"))
 	{
 		cmd = strtok(NULL, " ");
 		printf("%s\n", cmd);
 	}
-	if(!strcmp(cmd, "-l"))
+	else if(!strcmp(cmd, "-l"))
 	{
 		printf("%s\n", cmd);
 	}
-	if(!strcmp(cmd, "-t"))
+	else if(!strcmp(cmd, "-t"))
 	{
 		int time = atoi(strtok(NULL, " "));
 		printf("%d\n", time);
 	}
-	if(!strcmp(cmd, "-r"))
+	else if(!strcmp(cmd, "-r"))
 	{
 		printf("%s\n", cmd);
 	}
-	if(!strcmp(cmd, "-h"))
+	else if(!strcmp(cmd, "-h"))
 	{
 		printf("%s\n", cmd);
 	}
-	if(!strcmp(cmd, "-o"))
+	else if(!strcmp(cmd, "-o"))
 	{
 		int time = atoi(strtok(NULL, " "));
 		printf("%d\n", time);

@@ -13,6 +13,6 @@
 #include <signal.h>
 #include "task.h"
 
-void handle_client_request(char*);
+void handle_client_request(char*, Tasks*);
 
 ssize_t readln(int, char*);

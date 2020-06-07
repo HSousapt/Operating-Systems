@@ -12,11 +12,13 @@ Task init_task(char* desc, int task_id)
 Tasks* init_tasks(int size)
 {
 	Task *ts = malloc(sizeof(struct task)*size);
-	return(Tasks*){
-		->tasks = ts,
-		->taskTime = -1,
-		->pipeTime = -1,
-	};
+	Tasks *tasks = malloc(sizeof(struct ts));
+	tasks->tasks = ts;
+	tasks->taskTime = -1;
+	tasks->pipeTime = -1;
+
+	return tasks;
+	
 }
 
 void set_task_timer(Tasks *ts, int time)
