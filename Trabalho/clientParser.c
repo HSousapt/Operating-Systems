@@ -42,6 +42,7 @@ void handle_cmd_line(char **cmds, int n)
 	for(int i = 0; i < n; i++)
 	{
 		strcat(request, cmds[i]);
+		strcat(request, " ");
 	}
 	send_request(request);
 	free(request);
