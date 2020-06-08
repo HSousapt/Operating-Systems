@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#define free 2
 #define alive 1
 #define dead 0
 
@@ -16,6 +17,7 @@ typedef struct ts{
 	struct task *tasks;
 	int taskTime;
 	int pipeTime;
+	int size;
 }Tasks;
 
 

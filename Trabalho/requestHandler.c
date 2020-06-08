@@ -13,6 +13,20 @@ ssize_t readln(int f,char* buff)
 	return (r==-1)?-1:n;
 }
 
+void execute_tasks(Tasks *ts, char* cmd)
+{
+	for(int i = 0; i < ts->size && ts->tasks[i].state != free; i++)
+	{
+		if(ts->tasks[i].state == free)
+		{
+			ts->tasks[i] = init_task(cmd, i+1);
+		}
+	}
+		
+
+	printf("Task -> %s, Task id -> %d\n", ts->tasks[0].name, ts->tasks[0].id);
+}
+
 
 void handle_client_request(char* request, Tasks *tasks)
 {
@@ -22,18 +36,15 @@ void handle_client_request(char* request, Tasks *tasks)
 	{
 		int time = atoi(strtok(NULL, " "));
 		set_task_timer(tasks, time);
-		printf("taskTime -> %d\n", tasks->taskTime);
 	}
 	else if(!strcmp(cmd, "-m"))
 	{
 		int time = atoi(strtok(NULL, " "));
 		set_pipe_timer(tasks, time);
-		printf("pipeTime -> %d\n", tasks->pipeTime);
 	}
 	else if(!strcmp(cmd, "-e"))
 	{
-		cmd = strtok(NULL, " ");
-		printf("%s\n", cmd);
+		execute_tasks(tasks, request + 3);
 	}
 	else if(!strcmp(cmd, "-l"))
 	{

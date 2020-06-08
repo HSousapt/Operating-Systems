@@ -2,11 +2,13 @@
 
 Task init_task(char* desc, int task_id)
 {
-	return(Task){
-		.name = strdup(desc),
-		.id = task_id,
-		.state = alive,
-	};
+	Task t;
+	char *aux=malloc(sizeof(char*)*strlen(desc));
+	aux = strdup(desc);
+	t.name = aux;
+	t.id = task_id;
+	t.state = alive;
+	return t;
 }
 
 Tasks* init_tasks(int size)
@@ -16,6 +18,7 @@ Tasks* init_tasks(int size)
 	tasks->tasks = ts;
 	tasks->taskTime = -1;
 	tasks->pipeTime = -1;
+	tasks->size = size;
 
 	return tasks;
 	
