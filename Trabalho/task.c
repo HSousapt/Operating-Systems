@@ -1,27 +1,43 @@
 #include "task.h"
 
-Task init_task(char* desc, int task_id)
+/*struct task init_task(char* desc, int task_id)
 {
-	Task t;
-	char *aux=malloc(sizeof(char*)*strlen(desc));
-	aux = strdup(desc);
-	t.name = aux;
+	struct task t;
+	t.name = strdup(desc);
 	t.id = task_id;
 	t.state = alive;
 	return t;
+}*/
+
+int init_task(Tasks *ts, char* cmd)
+{
+	int i;
+	for(i = 0; i < ts->size; i++)
+	{
+		if(ts->tasks[i].state == free)
+		{
+			ts->tasks[i].name = strdup(cmd);
+			ts->tasks[i].id =(i+1);
+			ts->tasks[i].state = alive;
+			break;
+		}
+	}
+	return i;
 }
 
-Tasks* init_tasks(int size)
+Tasks init_tasks(int size)
 {
-	Task *ts = malloc(sizeof(struct task)*size);
-	Tasks *tasks = malloc(sizeof(struct ts));
-	tasks->tasks = ts;
-	tasks->taskTime = -1;
-	tasks->pipeTime = -1;
-	tasks->size = size;
+	Tasks ts;
+	ts.tasks = malloc(sizeof(struct task)*size);
+	for(int i = 0; i < size; i++)
+	{
+		ts.tasks[i].state = free;
+	}
+	ts.taskTime = -1;
+	ts.pipeTime = -1;
+	ts.size = size;
 
-	return tasks;
-	
+	return ts;
 }
 
 void set_task_timer(Tasks *ts, int time)

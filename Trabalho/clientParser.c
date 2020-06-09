@@ -44,6 +44,7 @@ void handle_cmd_line(char **cmds, int n)
 		strcat(request, cmds[i]);
 		strcat(request, " ");
 	}
+	request[strlen(request)-1] = '\0';
 	send_request(request);
 	free(request);
 }

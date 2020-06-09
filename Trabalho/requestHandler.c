@@ -13,18 +13,23 @@ ssize_t readln(int f,char* buff)
 	return (r==-1)?-1:n;
 }
 
+void execute(Tasks *ts, int id)
+{
+	int pid;
+	if((pid = fork()) < 0)
+		perror("ERRO NO FORK\n");
+	else if(!pid)
+	{
+		execlp(ts->tasks[id].name, ts->tasks[id].name,NULL);
+	}
+	else
+		waitpid(pid, NULL, 0);
+}
+
 void execute_tasks(Tasks *ts, char* cmd)
 {
-	for(int i = 0; i < ts->size && ts->tasks[i].state != free; i++)
-	{
-		if(ts->tasks[i].state == free)
-		{
-			ts->tasks[i] = init_task(cmd, i+1);
-		}
-	}
-		
-
-	printf("Task -> %s, Task id -> %d\n", ts->tasks[0].name, ts->tasks[0].id);
+	int id = init_task(ts, cmd);
+	execute(ts, id);
 }
 
 

@@ -7,11 +7,11 @@
 #define alive 1
 #define dead 0
 
-typedef struct task{
+struct task{
 	char *name;
 	int id;
 	int state;
-}Task;
+};
 
 typedef struct ts{
 	struct task *tasks;
@@ -21,9 +21,11 @@ typedef struct ts{
 }Tasks;
 
 
-Task init_task(char*, int);
+//struct task init_task(char*, int);
 
-Tasks* init_tasks(int);
+int init_task(Tasks*, char*);
+
+Tasks init_tasks(int);
 
 void set_task_timer(Tasks *, int);
 
