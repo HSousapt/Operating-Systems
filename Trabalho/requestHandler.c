@@ -13,23 +13,45 @@ ssize_t readln(int f,char* buff)
 	return (r==-1)?-1:n;
 }
 
-void execute(Tasks *ts, int id)
+int count_pipes(char* string)
 {
-	int pid;
-	if((pid = fork()) < 0)
-		perror("ERRO NO FORK\n");
-	else if(!pid)
+	int r = 0;
+	for(int i = 0; i < strlen(string); i++)
+		if(string[i] == '|') r++;
+	return r;
+}
+
+void execute(char *cmds[], int n)
+{
+	for(int i = 0; i < n; i++)
 	{
-		execlp(ts->tasks[id].name, ts->tasks[id].name,NULL);
+		int pid;
+		if(!(pid = fork()))
+			execlp(cmds[i], cmds[i], NULL);
+		else
+			waitpid(pid, NULL, 0);
 	}
-	else
-		waitpid(pid, NULL, 0);
+}
+
+void parse_execute(Tasks *ts, int id)
+{
+	int n = count_pipes(ts->tasks[id].name)+ 1;
+	char *cmds[n];
+	char *chain = strtok(ts->tasks[id].name, "|");
+	int j = 0;
+	while(chain != NULL)
+	{	
+		cmds[j++] = chain;
+		chain = strtok(NULL, "|");
+	}
+	
+	execute(cmds, n);
 }
 
 void execute_tasks(Tasks *ts, char* cmd)
 {
 	int id = init_task(ts, cmd);
-	execute(ts, id);
+	parse_execute(ts, id);
 }
 
 

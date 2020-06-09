@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define free 2
-#define alive 1
-#define dead 0
+#define FREE 2
+#define ALIVE 1
+#define DEAD 0
 
 struct task{
 	char *name;

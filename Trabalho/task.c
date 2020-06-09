@@ -14,11 +14,11 @@ int init_task(Tasks *ts, char* cmd)
 	int i;
 	for(i = 0; i < ts->size; i++)
 	{
-		if(ts->tasks[i].state == free)
+		if(ts->tasks[i].state == FREE)
 		{
 			ts->tasks[i].name = strdup(cmd);
 			ts->tasks[i].id =(i+1);
-			ts->tasks[i].state = alive;
+			ts->tasks[i].state = ALIVE;
 			break;
 		}
 	}
@@ -31,7 +31,7 @@ Tasks init_tasks(int size)
 	ts.tasks = malloc(sizeof(struct task)*size);
 	for(int i = 0; i < size; i++)
 	{
-		ts.tasks[i].state = free;
+		ts.tasks[i].state = FREE;
 	}
 	ts.taskTime = -1;
 	ts.pipeTime = -1;
