@@ -23,13 +23,13 @@ int count_char(char* string, char c)
 
 void execute(char *cmds[], int n)
 {
+
 	int fd[n][2];
 	int pids[n];
 	char* result = malloc(sizeof(char*)*1024);
-	int status = 0;	
 
 	//cria uma lista de pipes
-	for(int i = 0; i < n;i++)
+	for(int i = 0; i < n; i++)
 	{
 		pipe(fd[i]);
 	}
@@ -54,25 +54,39 @@ void execute(char *cmds[], int n)
 			
 			if(i == 0)
 			{
-				printf("Primeiro %s\n", args[0]);
 				close(fd[i][0]);
 				dup2(fd[i][1], 1);
 				close(fd[i][1]);
-				execvp(args[0], args);
-				_exit(1);
 			}
 			else
 			{
-				printf("%s\n", args[0]);
 				close(fd[i-1][1]);
 				dup2(fd[i-1][0], 0);
 				close(fd[i-1][0]);
-				//close(fd[i][0]);
-				//dup2(fd[i][1], 1);
-				//close(fd[i][1]);
-				execvp(args[0], args);
-				_exit(1);
+				close(fd[i][0]);
+				dup2(fd[i][1], 1);
+				close(fd[i][1]);
 			}
+			execvp(args[0], args);
+			_exit(0);
+		}
+	}
+
+	for(int k = 0; k < n; k++)
+	{
+		if(k == n-1)
+		{
+			close(fd[k][1]);
+			dup2(fd[k][0], 0);
+			close(fd[k][0]);
+			while(readln(0, result))
+				printf("%s\n", result);
+			memset(result, 0, 1024);
+		}
+		else
+		{
+			close(fd[k][0]);
+			close(fd[k][1]);
 		}
 	}
 }
