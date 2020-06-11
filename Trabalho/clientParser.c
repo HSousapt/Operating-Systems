@@ -33,15 +33,79 @@ void receive_reply()
 	close(reply);
 }
 
+void help(void)
+{
+}
+
+
+int parse_cmd(char* buff, char* request)
+{
+	int r = 1;
+	char *token = strtok(buff," ");
+	if(!strcmp(token,"tempo-inactividade"))
+	{
+		strcat(request, "-i ");
+		token = strtok(NULL, " ");
+		strcat(request, token);
+		
+	}
+	else if(!strcmp(token,"tempo-execucao"))
+	{
+		strcat(request, "-m ");
+		token = strtok(NULL, " ");
+		strcat(request, token);
+	}
+	else if(!strcmp(token,"executar"))
+	{
+		strcat(request, "-e ");
+		strcat(request, buff + 9);
+	}
+	else if(!strcmp(token,"listar"))
+	{
+		strcat(request, "-l");
+	}
+	else if(!strcmp(token,"terminar"))
+	{
+		strcat(request, "-t ");
+		token = strtok(NULL, " ");
+		strcat(request, token);
+	}
+	else if(!strcmp(token,"historico"))
+	{
+		strcat(request, "-r");
+	}
+	else if(!strcmp(token,"ajuda"))
+	{
+		help();
+	}
+	else if(!strcmp(token,"outpud"))
+	{
+		strcat(request, "-o ");
+		token = strtok(NULL, " ");
+		strcat(request, token);
+	}
+	else
+		r = 0;
+
+	return r;
+}
+
+
 void handle_cmd_shell()
 {
 	char buffer[50];
+	write(1, "> ", 2);
 	while(readln(0, buffer))
 	{
-		char *request = malloc(sizeof(char)*30);
-		strcat(request, buffer);
-		send_request(request);
-		free(request);
+		char* request = malloc(sizeof(char)*50);
+		if(parse_cmd(buffer, request))
+		{
+			send_request(request);
+			receive_reply();
+		}
+		else
+			printf("UNKNOWN COMMAND!\n");
+		write(1, "> ", 2);
 	}
 }
 

@@ -2,11 +2,11 @@ CC = gcc
 
 CFLAGS = -Wall
 
-all: client server
+all: argus server
 
-client: client.o clientParser.o
+argus: argus.o clientParser.o
 
-client.o: clientParser.h client.c
+argus.o: clientParser.h argus.c
 
 clientParser.o: clientParser.h clientParser.c
 
@@ -19,4 +19,4 @@ requestHandler.o: requestHandler.h requestHandler.c task.o
 task.o: task.h task.c
 
 clean:
-	rm -f client server *.o
+	rm -f argus server *.o

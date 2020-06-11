@@ -191,6 +191,6 @@ void handle_client_request(char* request, Tasks *tasks)
 	}
 	else
 	{
-		printf("ERRO\n");
+		printf("COMMAND ERRO");
 	}
 }
