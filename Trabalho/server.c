@@ -5,6 +5,7 @@ int main(int argc, char **argv)
 	int request;
 	char *buffer = malloc(sizeof(char)*50);
 	mkfifo("request", 0700);
+	mkfifo("reply", 0700);
 
 	Tasks tasks = init_tasks(10);
 	while(1)

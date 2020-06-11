@@ -13,6 +13,14 @@ ssize_t readln(int f,char* buff)
 	return (r==-1)?-1:n;
 }
 
+void write_reply(char* reply)
+{
+	int r = open("reply", O_WRONLY);
+	if(r < 0) perror("FIFO ERROR");
+	write(r, reply, strlen(reply));
+	close(r);
+}
+
 int count_char(char* string, char c)
 {
 	int r = 0;
@@ -93,7 +101,7 @@ void execute(char *cmds[], int n)
 			close(fd[k][0]);
 
 			while(readln(0, result))
-				printf("%s\n", result);
+				write_reply(result);
 			memset(result, 0, 1024);
 		}
 		else

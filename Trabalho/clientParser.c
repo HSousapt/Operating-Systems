@@ -12,7 +12,6 @@ ssize_t readln(int f,char* buff)
 	return (r==-1)?-1:n;
 }
 
-
 void send_request(char *code)
 {
 	int request;
@@ -27,9 +26,10 @@ void receive_reply()
 	char* buffer = malloc(sizeof(char*)*1024);
 	mkfifo("reply", 0700);
 	int reply = open("reply", O_RDONLY);
-	if(reply < 0) perror("ERROR");
+	if(reply < 0) perror("FIFO ERROR");
 	while(readln(reply, buffer))
 		printf("%s\n", buffer);
+	free(buffer);
 	close(reply);
 }
 
