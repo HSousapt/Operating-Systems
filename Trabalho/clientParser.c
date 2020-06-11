@@ -15,14 +15,23 @@ ssize_t readln(int f,char* buff)
 
 void send_request(char *code)
 {
-	mkfifo("request",0700);
 	int request;
 	request = open("request",O_WRONLY);
-	if(request < 0) perror("ERRO");
+	if(request < 0) perror("ERROR");
 	write(request,code,strlen(code));
 	close(request);
 }
 
+void receive_reply()
+{
+	char* buffer = malloc(sizeof(char*)*1024);
+	mkfifo("reply", 0700);
+	int reply = open("reply", O_RDONLY);
+	if(reply < 0) perror("ERROR");
+	while(readln(reply, buffer))
+		printf("%s\n", buffer);
+	close(reply);
+}
 
 void handle_cmd_shell()
 {
