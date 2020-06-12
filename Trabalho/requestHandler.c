@@ -29,11 +29,17 @@ int count_char(char* string, char c)
 	return r;
 }
 
+void write_to_file(char *output)
+{
+	int fd = open("test", O_CREAT | O_WRONLY, 0700);
+	write(fd, output, strlen(output));
+	close(fd);
+}
+
 void execute(char *cmds[], int n)
 {
 	int fd[n][2];
 	int pids[n];
-	char* result = malloc(sizeof(char*)*1024);
 
 	//cria uma lista de pipes
 	for(int i = 0; i < n; i++)
@@ -89,20 +95,27 @@ void execute(char *cmds[], int n)
 			_exit(0);
 		}
 	}
-	
+
 	//Father reads the result from the last pipe
 	for(int k = 0; k < n; k++)
 	{
 		if(k == n-1)
 		{
+			char* result = malloc(sizeof(char)*1024);
+			char* aux = malloc(sizeof(char)*512);
 			close(fd[k][1]);
 			if(dup2(fd[k][0], 0))
 				perror("ERRO IN DUP3");
 			close(fd[k][0]);
-
-			while(readln(0, result))
-				write_reply(result);
-			memset(result, 0, 1024);
+			
+			while(readln(0, aux))
+			{
+				strcat(result, aux);
+				strcat(result,"\n");
+			}
+			write_to_file(result);
+			free(aux);
+			free(result);
 		}
 		else
 		{
@@ -110,9 +123,10 @@ void execute(char *cmds[], int n)
 			close(fd[k][1]);
 		}
 	}
-	//Waits for all Children (dont know if needed yet);
+//	Waits for all Children (dont know if needed yet);
 	for(int k = 0; k < n; k++)
-		waitpid(-1, NULL, 0);
+		waitpid(pids[k], NULL, 0);
+
 }
 
 void parse_execute(Tasks *ts, int id)
@@ -129,7 +143,14 @@ void parse_execute(Tasks *ts, int id)
 	}
 	ts->tasks[id].state = ACTIVE;
 	execute(cmds, n);
-	ts->tasks[id].state = DEAD;;
+	char *reply = malloc(sizeof(char) * 30);
+	strcat(reply,"nova tarefa #");
+	char aux[5];
+	sprintf(aux, "%d", ts->tasks[id].id);
+	strcat(reply, aux);
+	write_reply(reply);
+	free(reply);
+	ts->tasks[id].state = DEAD;
 	free(tmp);
 }
 
@@ -141,11 +162,23 @@ void execute_tasks(Tasks *ts, char* cmd)
 
 void show_finished(Tasks *ts)
 {
+	char *reply = malloc(sizeof(char)*1024);
 	for(int i = 0; i < ts->size; i++)
 	{
 		if(ts->tasks[i].state == DEAD)
-			printf("#%d, %s\n", ts->tasks[i].id, ts->tasks[i].name);
+		{
+			strcat(reply,"#");
+			char id[3];
+			sprintf(id, "%d", ts->tasks[i].id);
+			strcat(reply,id);
+			strcat(reply,", ");
+			strcat(reply,ts->tasks[i].name);
+			strcat(reply,"\n");
+		}	
+		
 	}
+	write_reply(reply);
+	free(reply);
 }
 
 

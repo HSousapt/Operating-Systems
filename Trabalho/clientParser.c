@@ -27,16 +27,36 @@ void receive_reply()
 	mkfifo("reply", 0700);
 	int reply = open("reply", O_RDONLY);
 	if(reply < 0) perror("FIFO ERROR");
-	while(readln(reply, buffer))
-		printf("%s\n", buffer);
+	readln(reply, buffer);
+	printf("%s\n", buffer);
 	free(buffer);
 	close(reply);
 }
 
-void help(void)
+void help_cmd(void)
 {
+	printf("Execute a task -> (OPTION) -e \"p1 | p2 ... | p3\"\n");
+	printf("Define pipe-time -> (OPTION) -i <seconds>\n");
+	printf("Define task-time -> -m n\n");
+	printf("List executing tasks -> -l\n");
+	printf("List finished tasks -> -r\n");
+	printf("End a running task -> -t <task id>\n");
+	printf("Show output -> -o <task id>\n");
+	printf("Help -> -h\n");
 }
 
+
+void help_shell(void)
+{
+	printf("Execute a task -> (OPTION) executar p1 | p2 ... | pn\n");
+	printf("Define pipe-time -> (OPTION) tempo-inactividade <seconds>\n");
+	printf("Define task-time -> (OPTION) tempo-execucao <seconds>\n");
+	printf("List executing tasks -> (OPTION) listar\n");
+	printf("List finished tasks -> (OPTION) historico\n");
+	printf("End a running task -> (OPTION) terminar <task id>\n");
+	printf("Show output -> (OPTION) output <task id>\n");
+	printf("Help -> (OPTION) help\n");
+}
 
 int parse_cmd(char* buff, char* request)
 {
@@ -76,9 +96,9 @@ int parse_cmd(char* buff, char* request)
 	}
 	else if(!strcmp(token,"ajuda"))
 	{
-		help();
+		help_shell();
 	}
-	else if(!strcmp(token,"outpud"))
+	else if(!strcmp(token,"outpuy"))
 	{
 		strcat(request, "-o ");
 		token = strtok(NULL, " ");
@@ -105,6 +125,7 @@ void handle_cmd_shell()
 		}
 		else
 			printf("UNKNOWN COMMAND!\n");
+		free(request);
 		write(1, "> ", 2);
 	}
 }
