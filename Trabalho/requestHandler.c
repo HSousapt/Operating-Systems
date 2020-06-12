@@ -113,7 +113,8 @@ void execute(char *cmds[], int n)
 				strcat(result, aux);
 				strcat(result,"\n");
 			}
-			write_to_file(result);
+			//write_to_file(result);
+			write_reply(result);
 			free(aux);
 			free(result);
 		}
@@ -144,11 +145,11 @@ void parse_execute(Tasks *ts, int id)
 	ts->tasks[id].state = ACTIVE;
 	execute(cmds, n);
 	char *reply = malloc(sizeof(char) * 30);
-	strcat(reply,"nova tarefa #");
-	char aux[5];
-	sprintf(aux, "%d", ts->tasks[id].id);
-	strcat(reply, aux);
-	write_reply(reply);
+	//strcat(reply,"nova tarefa #");
+	//char aux[5];
+	//sprintf(aux, "%d", ts->tasks[id].id);
+	//strcat(reply, aux);
+	//write_reply(reply);
 	free(reply);
 	ts->tasks[id].state = DEAD;
 	free(tmp);
