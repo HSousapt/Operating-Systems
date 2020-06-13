@@ -19,4 +19,4 @@ requestHandler.o: requestHandler.h requestHandler.c task.o
 task.o: task.h task.c
 
 clean:
-	rm -f argus server reply request *.o
+	rm -f argus server reply request log log.idx *.o

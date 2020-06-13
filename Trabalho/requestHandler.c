@@ -29,14 +29,33 @@ int count_char(char* string, char c)
 	return r;
 }
 
-void write_to_file(char *output)
+void write_to_files(char *output, int id)
 {
-	int fd = open("test", O_CREAT | O_WRONLY, 0700);
-	write(fd, output, strlen(output));
-	close(fd);
+	char task_n[4];
+	sprintf(task_n, "%d", id+1);
+	int s = strlen(output);
+	char size[50];
+	sprintf(size, "%d", s);
+	char *aux = malloc(sizeof(char)*60);
+	strcat(aux,task_n);
+	strcat(aux," ");
+	strcat(aux, size);
+	strcat(aux, "\n");
+	int log = open("log", O_CREAT | O_APPEND | O_WRONLY, 0700);
+	int idx = open("log.idx", O_CREAT | O_APPEND | O_WRONLY, 0700);
+	write(idx, aux, strlen(aux));
+	write(log, output, strlen(output));
+	close(log);
+	close(idx);
+	char *reply = malloc(sizeof(char) * 30);
+	strcat(reply,"nova tarefa #");
+	strcat(reply, task_n);
+	write_reply(reply);
+	free(reply);
+	free(aux);
 }
 
-void execute(char *cmds[], int n)
+void execute(char *cmds[], int n, int id)
 {
 	int fd[n][2];
 	int pids[n];
@@ -66,6 +85,9 @@ void execute(char *cmds[], int n)
 			}
 			args[j]=NULL;
 			
+			for(int l = 0; l < j; l++)
+				printf("%s |\n", args[l]);
+
 			//First command
 			if(i == 0)
 			{
@@ -113,8 +135,7 @@ void execute(char *cmds[], int n)
 				strcat(result, aux);
 				strcat(result,"\n");
 			}
-			//write_to_file(result);
-			write_reply(result);
+			write_to_files(result, id);
 			free(aux);
 			free(result);
 		}
@@ -125,14 +146,14 @@ void execute(char *cmds[], int n)
 		}
 	}
 //	Waits for all Children (dont know if needed yet);
-	for(int k = 0; k < n; k++)
-		waitpid(pids[k], NULL, 0);
+//	for(int k = 0; k < n; k++)
+//		waitpid(pids[k], NULL, 0);
 
 }
 
-void parse_execute(Tasks *ts, int id)
+void parse_execute(Tasks *ts, int id, char* tmp)
 {
-	char* tmp = strdup(ts->tasks[id].name);
+	//char* tmp = strdup(ts->tasks[id].name);
 	int n = count_char(tmp, '|') + 1;
 	char *cmds[n];
 	char *chain = strtok(tmp, "|");
@@ -142,23 +163,22 @@ void parse_execute(Tasks *ts, int id)
 		cmds[j++] = chain;
 		chain = strtok(NULL, "|");
 	}
-	ts->tasks[id].state = ACTIVE;
-	execute(cmds, n);
-	char *reply = malloc(sizeof(char) * 30);
-	//strcat(reply,"nova tarefa #");
-	//char aux[5];
-	//sprintf(aux, "%d", ts->tasks[id].id);
-	//strcat(reply, aux);
-	//write_reply(reply);
-	free(reply);
-	ts->tasks[id].state = DEAD;
+	//ts->tasks[id].state = ACTIVE;
+	execute(cmds, n, id);
+	//ts->tasks[id].state = DEAD;
 	free(tmp);
 }
 
 void execute_tasks(Tasks *ts, char* cmd)
 {
 	int id = init_task(ts, cmd);
-	parse_execute(ts, id);
+	char* tmp = strdup(ts->tasks[id].name);
+	ts->tasks[id].state = ACTIVE;
+	int pid = fork();
+	if(!pid)
+		parse_execute(ts, id, tmp);
+	waitpid(-1, NULL, 0);
+	ts->tasks[id].state = DEAD;
 }
 
 void show_finished(Tasks *ts)
@@ -180,6 +200,23 @@ void show_finished(Tasks *ts)
 	}
 	write_reply(reply);
 	free(reply);
+}
+
+void show_output(int id)
+{
+	int idx = open("log.idx", O_RDONLY, 0700);
+	int log = open("log", O_RDONLY, 0700);
+	char* help = malloc(sizeof(char)*10);
+	int line =0;
+	while(line < id)
+	{
+		readln(idx, help);
+		line++;
+	}
+	printf("%s\n", help);
+	close(idx);
+	close(log);
+	free(help);
 }
 
 
@@ -221,7 +258,7 @@ void handle_client_request(char* request, Tasks *tasks)
 	else if(!strcmp(cmd, "-o"))
 	{
 		int time = atoi(strtok(NULL, " "));
-		printf("%d\n", time);
+		show_output(time);
 	}
 	else
 	{

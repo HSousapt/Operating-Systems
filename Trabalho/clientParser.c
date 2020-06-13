@@ -98,7 +98,7 @@ int parse_cmd(char* buff, char* request)
 	{
 		help_shell();
 	}
-	else if(!strcmp(token,"outpuy"))
+	else if(!strcmp(token,"output"))
 	{
 		strcat(request, "-o ");
 		token = strtok(NULL, " ");
