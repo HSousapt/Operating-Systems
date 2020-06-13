@@ -1,4 +1,5 @@
 #include "requestHandler.h"
+#define MAXBUFF 30
 
 int main(int argc, char **argv)
 {
@@ -9,7 +10,8 @@ int main(int argc, char **argv)
 	Tasks tasks = init_tasks(10);
 	while(1)
 	{
-		char *buffer = malloc(sizeof(char*)*30);
+		char buffer[MAXBUFF];
+		memset(buffer, 0, MAXBUFF);
 		request = open("request", O_RDONLY);
 		if(request < 0)
 		{
@@ -20,7 +22,6 @@ int main(int argc, char **argv)
 		readln(request, buffer);
 		close(request);
 		handle_client_request(buffer, &tasks);
-		free(buffer);
 	}
 	unlink("request");
 	return 0;

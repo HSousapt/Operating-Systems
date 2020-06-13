@@ -28,7 +28,9 @@ void receive_reply()
 	int reply = open("reply", O_RDONLY);
 	if(reply < 0) perror("FIFO ERROR");
 	while(readln(reply, buffer))
+	{
 		printf("%s\n", buffer);
+	}
 	free(buffer);
 	close(reply);
 }

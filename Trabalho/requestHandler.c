@@ -34,9 +34,9 @@ void write_to_files(char *output, int id)
 	char task_n[4];
 	sprintf(task_n, "%d", id+1);
 	int s = strlen(output);
-	char size[50];
+	char size[10];
 	sprintf(size, "%d", s);
-	char *aux = malloc(sizeof(char)*60);
+	char *aux = (char*)malloc(sizeof(char)*60);
 	strcat(aux,task_n);
 	strcat(aux," ");
 	strcat(aux, size);
@@ -45,14 +45,14 @@ void write_to_files(char *output, int id)
 	int idx = open("log.idx", O_CREAT | O_APPEND | O_WRONLY, 0700);
 	write(idx, aux, strlen(aux));
 	write(log, output, strlen(output));
+	free(aux);
 	close(log);
 	close(idx);
-	char *reply = malloc(sizeof(char) * 30);
+	char *reply =(char*)malloc(sizeof(char) * 30);
 	strcat(reply,"nova tarefa #");
 	strcat(reply, task_n);
 	write_reply(reply);
 	free(reply);
-	free(aux);
 }
 
 void execute(char *cmds[], int n, int id)
@@ -84,9 +84,6 @@ void execute(char *cmds[], int n, int id)
 				cmd = strtok(NULL, " ");
 			}
 			args[j]=NULL;
-			
-			for(int l = 0; l < j; l++)
-				printf("%s |\n", args[l]);
 
 			//First command
 			if(i == 0)
@@ -123,20 +120,19 @@ void execute(char *cmds[], int n, int id)
 	{
 		if(k == n-1)
 		{
-			char* result = malloc(sizeof(char)*1024);
-			char* aux = malloc(sizeof(char)*512);
+			char* result =(char*) malloc(sizeof(char)*2048);
+			char* aux =(char*)malloc(sizeof(char)*2048);
 			close(fd[k][1]);
 			if(dup2(fd[k][0], 0))
 				perror("ERRO IN DUP3");
-			close(fd[k][0]);
+			close(fd[k][0]);			
 			
 			while(readln(0, aux))
 			{
 				strcat(result, aux);
-				strcat(result,"\n");
+				strcat(result, "\n");
 			}
 			write_to_files(result, id);
-			free(aux);
 			free(result);
 		}
 		else
@@ -146,8 +142,8 @@ void execute(char *cmds[], int n, int id)
 		}
 	}
 //	Waits for all Children (dont know if needed yet);
-//	for(int k = 0; k < n; k++)
-//		waitpid(pids[k], NULL, 0);
+	for(int k = 0; k < n; k++)
+		waitpid(pids[k], NULL, 0);
 
 }
 
@@ -166,7 +162,7 @@ void parse_execute(Tasks *ts, int id, char* tmp)
 	//ts->tasks[id].state = ACTIVE;
 	execute(cmds, n, id);
 	//ts->tasks[id].state = DEAD;
-	free(tmp);
+	//free(tmp);
 }
 
 void execute_tasks(Tasks *ts, char* cmd)
@@ -177,13 +173,14 @@ void execute_tasks(Tasks *ts, char* cmd)
 	int pid = fork();
 	if(!pid)
 		parse_execute(ts, id, tmp);
-	waitpid(-1, NULL, 0);
+	waitpid(pid, NULL, 0);
 	ts->tasks[id].state = DEAD;
+	free(tmp);
 }
 
 void show_finished(Tasks *ts)
 {
-	char *reply = malloc(sizeof(char)*1024);
+	char *reply =(char*)malloc(sizeof(char)*1024);
 	for(int i = 0; i < ts->size; i++)
 	{
 		if(ts->tasks[i].state == DEAD)
@@ -204,19 +201,37 @@ void show_finished(Tasks *ts)
 
 void show_output(int id)
 {
-	int idx = open("log.idx", O_RDONLY, 0700);
-	int log = open("log", O_RDONLY, 0700);
-	char* help = malloc(sizeof(char)*10);
-	int line =0;
-	while(line < id)
+	int idx = open("log.idx", O_RDONLY , 0700);
+	int log = open("log", O_RDONLY , 0700);
+	char* help =(char*) malloc(sizeof(char)*10);
+	int offset = 0;
+	int readbytes = 0;
+	int flag = 1;
+	char* token;
+	while(flag)
 	{
 		readln(idx, help);
-		line++;
+		token = strtok(help, " ");
+		if(atoi(token) != id)
+		{
+			token = strtok(NULL, " ");
+			offset += atoi(token);
+		}
+		else
+		{
+			token = strtok(NULL, " ");
+			readbytes = atoi(token);
+			flag = 0;
+		}
 	}
-	printf("%s\n", help);
+	free(help);	
 	close(idx);
+	lseek(log, offset, SEEK_SET);
+	char *reply = malloc(sizeof(char) * readbytes);
+	read(log, reply, readbytes);
+	write_reply(reply);
+	free(reply);
 	close(log);
-	free(help);
 }
 
 
@@ -257,8 +272,8 @@ void handle_client_request(char* request, Tasks *tasks)
 	}
 	else if(!strcmp(cmd, "-o"))
 	{
-		int time = atoi(strtok(NULL, " "));
-		show_output(time);
+		int id = atoi(strtok(NULL, " "));
+		show_output(id);
 	}
 	else
 	{
