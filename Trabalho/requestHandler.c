@@ -48,18 +48,24 @@ void write_to_files(char *output, int id)
 	free(aux);
 	close(log);
 	close(idx);
-	char *reply =(char*)malloc(sizeof(char) * 30);
-	strcat(reply,"nova tarefa #");
-	strcat(reply, task_n);
-	write_reply(reply);
-	free(reply);
+}
+
+void handle_alarm(int sig)
+{
+	kill(getpid(), SIGKILL);
 }
 
 void execute(char *cmds[], int n, int id)
 {
 	int fd[n][2];
 	int pids[n];
-
+	char *reply =(char*)malloc(sizeof(char) * 30);
+	char aux[5];
+	sprintf(aux,"%d", id+1);
+	strcat(reply,"nova tarefa #");
+	strcat(reply, aux);
+	write_reply(reply);
+	free(reply);
 	//cria uma lista de pipes
 	for(int i = 0; i < n; i++)
 	{
@@ -80,7 +86,8 @@ void execute(char *cmds[], int n, int id)
 			int j = 0;
 			while(cmd != NULL)
 			{
-				args[j++] = cmd;
+				args[j] = cmd;
+				printf("|%s|\n", args[j++]);
 				cmd = strtok(NULL, " ");
 			}
 			args[j]=NULL;
@@ -115,6 +122,10 @@ void execute(char *cmds[], int n, int id)
 		}
 	}
 
+//	Waits for all Children (dont know if needed yet);
+	for(int k = 0; k < n; k++)
+		waitpid(pids[k], NULL, 0);
+
 	//Father reads the result from the last pipe
 	for(int k = 0; k < n; k++)
 	{
@@ -141,15 +152,14 @@ void execute(char *cmds[], int n, int id)
 			close(fd[k][1]);
 		}
 	}
-//	Waits for all Children (dont know if needed yet);
+/*	Waits for all Children (dont know if needed yet);
 	for(int k = 0; k < n; k++)
-		waitpid(pids[k], NULL, 0);
+		waitpid(pids[k], NULL, 0);*/
 
 }
 
 void parse_execute(Tasks *ts, int id, char* tmp)
 {
-	//char* tmp = strdup(ts->tasks[id].name);
 	int n = count_char(tmp, '|') + 1;
 	char *cmds[n];
 	char *chain = strtok(tmp, "|");
@@ -159,23 +169,29 @@ void parse_execute(Tasks *ts, int id, char* tmp)
 		cmds[j++] = chain;
 		chain = strtok(NULL, "|");
 	}
-	//ts->tasks[id].state = ACTIVE;
+	if(ts->taskTime > 0)
+	{
+		alarm(ts->taskTime);
+	}
 	execute(cmds, n, id);
-	//ts->tasks[id].state = DEAD;
-	//free(tmp);
+	ts->tasks[id].state = DEAD;
 }
 
 void execute_tasks(Tasks *ts, char* cmd)
 {
+	signal(SIGALRM, handle_alarm);
 	int id = init_task(ts, cmd);
 	char* tmp = strdup(ts->tasks[id].name);
 	ts->tasks[id].state = ACTIVE;
+	int i = 0;
 	int pid = fork();
 	if(!pid)
+	{
 		parse_execute(ts, id, tmp);
-	waitpid(pid, NULL, 0);
-	ts->tasks[id].state = DEAD;
+		_exit(0);
+	}
 	free(tmp);
+	waitpid(-1, NULL, WNOHANG);
 }
 
 void show_finished(Tasks *ts)
@@ -185,6 +201,29 @@ void show_finished(Tasks *ts)
 	{
 		if(ts->tasks[i].state == DEAD)
 		{
+			strcat(reply,"#");
+			char id[3];
+			sprintf(id, "%d", ts->tasks[i].id);
+			strcat(reply,id);
+			strcat(reply,", ");
+			strcat(reply,ts->tasks[i].name);
+			strcat(reply,"\n");
+		}	
+		
+	}
+	write_reply(reply);
+	free(reply);
+}
+
+void show_active(Tasks *ts)
+{
+	char *reply =(char*)malloc(sizeof(char)*1024);
+	strcat(reply, "NO TASKS RUNNING!");
+	for(int i = 0; i < ts->size; i++)
+	{
+		if(ts->tasks[i].state == ACTIVE)
+		{
+			if(!i) memset(reply, 0, 1024);
 			strcat(reply,"#");
 			char id[3];
 			sprintf(id, "%d", ts->tasks[i].id);
@@ -234,6 +273,45 @@ void show_output(int id)
 	close(log);
 }
 
+void help_shell(void)
+{
+	char *f[4];
+	
+	char *help = malloc(sizeof(char) * 256);
+		
+	f[0]="Execute a task -> (OPTION) executar p1 | p2 ... | pn\nDefine pipe-time -> (OPTION) tempo-inactividade <seconds>\n";
+	f[1]="Define task-time -> (OPTION) tempo-execucao <seconds>\nList executing tasks -> (OPTION) listar\n";
+	f[2]="List finished tasks -> (OPTION) historico\nEnd a running task -> (OPTION) terminar <task id>\n";
+	f[3]="Show output -> (OPTION) output <task id>\nHelp -> (OPTION) ajuda\n";
+	
+	for(int i = 0;i<4;i++)
+	{	
+		strcat(help, f[i]);	
+	}
+	write_reply(help);
+	free(help);
+
+}
+
+void help_cmd(void)
+{
+	
+	char *f[3];
+
+	char *help = malloc(sizeof(char) * 256);
+	
+	f[0]="Execute a task -> (OPTION) -e \"p1 | p2 ... | p3\"\nDefine pipe-time -> (OPTION) -i <seconds>\n";
+	f[1]="Define task-time -> -m n\nList executing tasks -> -l\nList finished tasks -> -r\n";
+	f[2]="End a running task -> -t <task id>\nShow output -> -o <task id>\nHelp -> -h\n";
+	
+	for(int i = 0;i<3;i++)
+	{	
+		strcat(help, f[i]);	
+	}
+	write_reply(help);
+	free(help);
+}
+
 
 void handle_client_request(char* request, Tasks *tasks)
 {
@@ -255,7 +333,7 @@ void handle_client_request(char* request, Tasks *tasks)
 	}
 	else if(!strcmp(cmd, "-l"))
 	{
-		printf("%s\n", cmd);
+		show_active(tasks);
 	}
 	else if(!strcmp(cmd, "-t"))
 	{
@@ -268,7 +346,11 @@ void handle_client_request(char* request, Tasks *tasks)
 	}
 	else if(!strcmp(cmd, "-h"))
 	{
-		printf("%s\n", cmd);
+		help_cmd();
+	}
+	else if(!strcmp(cmd, "-h2"))
+	{
+		help_shell();
 	}
 	else if(!strcmp(cmd, "-o"))
 	{

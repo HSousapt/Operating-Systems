@@ -28,37 +28,11 @@ void receive_reply()
 	int reply = open("reply", O_RDONLY);
 	if(reply < 0) perror("FIFO ERROR");
 	while(readln(reply, buffer))
-	{
 		printf("%s\n", buffer);
-	}
 	free(buffer);
 	close(reply);
 }
 
-void help_cmd(void)
-{
-	printf("Execute a task -> (OPTION) -e \"p1 | p2 ... | p3\"\n");
-	printf("Define pipe-time -> (OPTION) -i <seconds>\n");
-	printf("Define task-time -> -m n\n");
-	printf("List executing tasks -> -l\n");
-	printf("List finished tasks -> -r\n");
-	printf("End a running task -> -t <task id>\n");
-	printf("Show output -> -o <task id>\n");
-	printf("Help -> -h\n");
-}
-
-
-void help_shell(void)
-{
-	printf("Execute a task -> (OPTION) executar p1 | p2 ... | pn\n");
-	printf("Define pipe-time -> (OPTION) tempo-inactividade <seconds>\n");
-	printf("Define task-time -> (OPTION) tempo-execucao <seconds>\n");
-	printf("List executing tasks -> (OPTION) listar\n");
-	printf("List finished tasks -> (OPTION) historico\n");
-	printf("End a running task -> (OPTION) terminar <task id>\n");
-	printf("Show output -> (OPTION) output <task id>\n");
-	printf("Help -> (OPTION) help\n");
-}
 
 int parse_cmd(char* buff, char* request)
 {
@@ -81,10 +55,12 @@ int parse_cmd(char* buff, char* request)
 	{
 		strcat(request, "-e ");
 		strcat(request, buff + 9);
+		r = 2;
 	}
 	else if(!strcmp(token,"listar"))
 	{
 		strcat(request, "-l");
+		r = 2;
 	}
 	else if(!strcmp(token,"terminar"))
 	{
@@ -95,16 +71,19 @@ int parse_cmd(char* buff, char* request)
 	else if(!strcmp(token,"historico"))
 	{
 		strcat(request, "-r");
+		r = 2;
 	}
 	else if(!strcmp(token,"ajuda"))
 	{
-		help_shell();
+		strcat(request,"-h2");
+		r = 2;
 	}
 	else if(!strcmp(token,"output"))
 	{
 		strcat(request, "-o ");
 		token = strtok(NULL, " ");
 		strcat(request, token);
+		r = 2;
 	}
 	else
 		r = 0;
@@ -120,10 +99,14 @@ void handle_cmd_shell()
 	while(readln(0, buffer))
 	{
 		char* request = malloc(sizeof(char)*50);
-		if(parse_cmd(buffer, request))
+		int n;
+		if((n = parse_cmd(buffer, request)))
 		{
 			send_request(request);
-			receive_reply();
+			if(n == 2)
+			{
+				receive_reply();
+			}
 		}
 		else
 			printf("UNKNOWN COMMAND!\n");
@@ -135,12 +118,16 @@ void handle_cmd_shell()
 void handle_cmd_line(char **cmds, int n)
 {
 	char *request = malloc(sizeof(char)*50);
+	int flag = 0;
 	for(int i = 0; i < n; i++)
 	{
 		strcat(request, cmds[i]);
 		strcat(request, " ");
 	}
+	if(!strcmp(cmds[0]+1, "e") || !strcmp(cmds[0]+1, "r") ||!strcmp(cmds[0]+1, "l") ||!strcmp(cmds[0]+1, "h") ||!strcmp(cmds[0]+1, "o"))flag = 1;
 	request[strlen(request)-1] = '\0';
 	send_request(request);
 	free(request);
+	if(flag)
+		receive_reply();
 }

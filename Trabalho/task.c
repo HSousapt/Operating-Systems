@@ -33,8 +33,8 @@ Tasks init_tasks(int size)
 	{
 		ts.tasks[i].state = FREE;
 	}
-	ts.taskTime = -1;
-	ts.pipeTime = -1;
+	ts.taskTime = 0;
+	ts.pipeTime = 0;
 	ts.size = size;
 
 	return ts;
