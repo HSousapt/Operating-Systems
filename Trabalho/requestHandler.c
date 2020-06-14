@@ -50,12 +50,26 @@ void write_to_files(char *output, int id)
 	close(idx);
 }
 
-void handle_alarm(int sig)
+void timeout_task_alarm(int sig)
 {
-	kill(getpid(), SIGKILL);
+	kill(getpid(), SIGTERM);
+	_exit(0);
 }
 
-void execute(char *cmds[], int n, int id)
+void timeout_pipe_alarm(int sig)
+{
+	kill(getpid(), SIGTERM);
+	_exit(0);
+}
+
+void reap_zombies(int sig)
+{
+	int p;
+	int status;
+	while((p = waitpid(-1, &status, WNOHANG))!= -1);
+}
+
+void execute(char *cmds[], int n, int id, int pipeTime)
 {
 	int fd[n][2];
 	int pids[n];
@@ -86,8 +100,7 @@ void execute(char *cmds[], int n, int id)
 			int j = 0;
 			while(cmd != NULL)
 			{
-				args[j] = cmd;
-				printf("|%s|\n", args[j++]);
+				args[j++] = cmd;
 				cmd = strtok(NULL, " ");
 			}
 			args[j]=NULL;
@@ -115,7 +128,8 @@ void execute(char *cmds[], int n, int id)
 				close(fd[k][0]);
 				close(fd[k][1]);
 			}
-		
+			if(pipeTime > 0)
+				alarm(pipeTime);
 			if(execvp(args[0], args) < 0)
 				perror("EXEC ERROR!\n");
 			_exit(0);
@@ -146,11 +160,11 @@ void execute(char *cmds[], int n, int id)
 			write_to_files(result, id);
 			free(result);
 		}
-		else
-		{
+//		else
+//		{
 			close(fd[k][0]);
 			close(fd[k][1]);
-		}
+//		}
 	}
 //	Waits for all Children (dont know if needed yet);
 	for(int k = 0; k < n; k++)
@@ -173,12 +187,17 @@ void parse_execute(Tasks *ts, int id, char* tmp)
 	{
 		alarm(ts->taskTime);
 	}
-	execute(cmds, n, id);
+	execute(cmds, n, id, ts->pipeTime);
 }
 
 void execute_tasks(Tasks *ts, char* cmd)
 {
-	signal(SIGALRM, handle_alarm);
+	signal(SIGALRM, timeout_task_alarm);
+	signal(SIGALRM, timeout_pipe_alarm);
+	signal(SIGUSR2, reap_zombies);
+	//signal(SIGUSR1, timeout_task_alarm);
+	//signal(SIGINT, timeout_task_alarm);
+
 	int id = init_task(ts, cmd);
 	char* tmp = strdup(ts->tasks[id].name);
 	ts->tasks[id].state = ACTIVE;
@@ -193,10 +212,15 @@ void execute_tasks(Tasks *ts, char* cmd)
 	{
 		free(tmp);
 		ts->tasks[id].pid = pid;
+		ts->tasks[id].c = CONC;
 		sleep(1);
 		waitpid(pid, &status, WNOHANG);
 		if(WIFEXITED(status))
+		{
 			ts->tasks[id].state = DEAD;
+		}
+//		else
+//			kill(getppid(), SIGUSR2);
 	}
 
 }
@@ -213,6 +237,14 @@ void show_finished(Tasks *ts)
 			sprintf(id, "%d", ts->tasks[i].id);
 			strcat(reply,id);
 			strcat(reply,", ");
+			if(ts->tasks[i].c==CONC)
+			strcat(reply,"concluida: ");
+			else if(ts->tasks[i].c==TERM)
+			strcat(reply,"terminada: ");
+			else if(ts->tasks[i].c==TI)
+			strcat(reply,"max inactividade: ");
+			else if(ts->tasks[i].c==TP)
+			strcat(reply,"max execução: ");
 			strcat(reply,ts->tasks[i].name);
 			strcat(reply,"\n");
 		}	
@@ -245,8 +277,13 @@ void show_active(Tasks *ts)
 	free(reply);
 }
 
-void show_output(int id)
+void show_output(Tasks *ts, int id)
 {
+	if(ts->tasks[id-1].state == ACTIVE)
+	{
+		write_reply("TASK STILL RUNNING!");
+		return;
+	}
 	int idx = open("log.idx", O_RDONLY , 0700);
 	int log = open("log", O_RDONLY , 0700);
 	char* help =(char*) malloc(sizeof(char)*10);
@@ -272,9 +309,11 @@ void show_output(int id)
 	}
 	free(help);	
 	close(idx);
+	printf("%d\n", offset);
 	lseek(log, offset, SEEK_SET);
 	char *reply = malloc(sizeof(char) * readbytes);
 	read(log, reply, readbytes);
+	printf("%s\n", reply);
 	write_reply(reply);
 	free(reply);
 	close(log);
@@ -289,7 +328,7 @@ void help_shell(void)
 	f[0]="Execute a task -> (OPTION) executar p1 | p2 ... | pn\nDefine pipe-time -> (OPTION) tempo-inactividade <seconds>\n";
 	f[1]="Define task-time -> (OPTION) tempo-execucao <seconds>\nList executing tasks -> (OPTION) listar\n";
 	f[2]="List finished tasks -> (OPTION) historico\nEnd a running task -> (OPTION) terminar <task id>\n";
-	f[3]="Show output -> (OPTION) output <task id>\nHelp -> (OPTION) ajuda\n";
+	f[3]="Show output -> (OPTION) output <task id>\nPredefined file -> ficheiro <nome ficheiro>\nHelp -> (OPTION) ajuda\n";
 	
 	for(int i = 0;i<4;i++)
 	{	
@@ -309,7 +348,7 @@ void help_cmd(void)
 	
 	f[0]="Execute a task -> (OPTION) -e \"p1 | p2 ... | p3\"\nDefine pipe-time -> (OPTION) -i <seconds>\n";
 	f[1]="Define task-time -> -m n\nList executing tasks -> -l\nList finished tasks -> -r\n";
-	f[2]="End a running task -> -t <task id>\nShow output -> -o <task id>\nHelp -> -h\n";
+	f[2]="End a running task -> -t <task id>\nShow output -> -o <task id>\nPredefined file -> -f\nHelp -> -h\n";
 	
 	for(int i = 0;i<3;i++)
 	{	
@@ -323,8 +362,10 @@ void terminate_task(Tasks *ts, int id)
 {
 	if(ts->tasks[id-1].state == ACTIVE)
 	{
-		kill(ts->tasks[id-1].pid, SIGTERM);
+		printf("passei aqui\n");
 		ts->tasks[id-1].state = DEAD;
+		ts->tasks[id-1].c = TERM;
+		kill(ts->tasks[id-1].pid, SIGTERM);
 	}
 }
 
@@ -371,7 +412,7 @@ void handle_client_request(char* request, Tasks *tasks)
 	else if(!strcmp(cmd, "-o"))
 	{
 		int id = atoi(strtok(NULL, " "));
-		show_output(id);
+		show_output(tasks, id);
 	}
 	else
 	{

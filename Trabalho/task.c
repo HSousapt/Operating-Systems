@@ -20,6 +20,7 @@ int init_task(Tasks *ts, char* cmd)
 			ts->tasks[i].id =(i+1);
 			ts->tasks[i].state = ALIVE;
 			ts->tasks[i].pid = 0;
+			ts->tasks[i].c = COM;
 			break;
 		}
 	}

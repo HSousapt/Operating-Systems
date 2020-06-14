@@ -8,11 +8,18 @@
 #define ALIVE 1
 #define DEAD 0
 
+#define CONC 5 //cocluiu normalmente
+#define TERM 6 // foi terminada
+#define COM 7    //so serve para inicializar
+#define TI 8    // max inatividade
+#define TP 9    // max execuçao
+
 struct task{
 	char *name;
 	int id;
 	int state;
 	int pid;
+	int c;
 };
 
 typedef struct ts{
