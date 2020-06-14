@@ -12,6 +12,7 @@ struct task{
 	char *name;
 	int id;
 	int state;
+	int pid;
 };
 
 typedef struct ts{

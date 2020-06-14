@@ -192,6 +192,7 @@ void execute_tasks(Tasks *ts, char* cmd)
 	else
 	{
 		free(tmp);
+		ts->tasks[id].pid = pid;
 		sleep(1);
 		waitpid(pid, &status, WNOHANG);
 		if(WIFEXITED(status))
@@ -318,6 +319,15 @@ void help_cmd(void)
 	free(help);
 }
 
+void terminate_task(Tasks *ts, int id)
+{
+	if(ts->tasks[id-1].state == ACTIVE)
+	{
+		kill(ts->tasks[id-1].pid, SIGTERM);
+		ts->tasks[id-1].state = DEAD;
+	}
+}
+
 
 void handle_client_request(char* request, Tasks *tasks)
 {
@@ -343,8 +353,8 @@ void handle_client_request(char* request, Tasks *tasks)
 	}
 	else if(!strcmp(cmd, "-t"))
 	{
-		int time = atoi(strtok(NULL, " "));
-		printf("%d\n", time);
+		int id = atoi(strtok(NULL, " "));
+		terminate_task(tasks, id);
 	}
 	else if(!strcmp(cmd, "-r"))
 	{

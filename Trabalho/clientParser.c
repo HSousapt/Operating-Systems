@@ -12,6 +12,26 @@ ssize_t readln(int f,char* buff)
 	return (r==-1)?-1:n;
 }
 
+int count_words(char *sentence)
+{
+    int count=0,i,len;
+    char lastC;
+    len=strlen(sentence);
+    if(len > 0)
+    {
+        lastC = sentence[0];
+    }
+    for(i=0; i<=len; i++)
+    {
+        if((sentence[i]==' ' || sentence[i]=='\0') && lastC != ' ')
+        {
+            count++;
+        }
+        lastC = sentence[i];
+    }
+    return count;
+}
+
 void send_request(char *code)
 {
 	int request;
@@ -102,9 +122,7 @@ void handle_cmd_shell()
 		int n;
 		if((n = parse_cmd(buffer, request)))
 		{
-			printf("|%d|\n", n);
 			send_request(request);
-			printf("|%s|\n", request);
 			if(n == 2)
 			{
 				receive_reply();

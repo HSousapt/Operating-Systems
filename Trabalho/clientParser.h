@@ -13,3 +13,7 @@ void handle_cmd_shell(void);
 void handle_cmd_line(char**, int);
 
 void receive_reply(void);
+
+int count_words(char *);
+
+ssize_t readln(int, char*);
