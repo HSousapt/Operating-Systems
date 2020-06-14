@@ -123,8 +123,8 @@ void execute(char *cmds[], int n, int id)
 	}
 
 //	Waits for all Children (dont know if needed yet);
-	for(int k = 0; k < n; k++)
-		waitpid(pids[k], NULL, 0);
+//	for(int k = 0; k < n; k++)
+//		waitpid(pids[k], NULL, 0);
 
 	//Father reads the result from the last pipe
 	for(int k = 0; k < n; k++)
@@ -152,9 +152,9 @@ void execute(char *cmds[], int n, int id)
 			close(fd[k][1]);
 		}
 	}
-/*	Waits for all Children (dont know if needed yet);
+//	Waits for all Children (dont know if needed yet);
 	for(int k = 0; k < n; k++)
-		waitpid(pids[k], NULL, 0);*/
+		waitpid(pids[k], NULL, 0);
 
 }
 
@@ -174,7 +174,6 @@ void parse_execute(Tasks *ts, int id, char* tmp)
 		alarm(ts->taskTime);
 	}
 	execute(cmds, n, id);
-	ts->tasks[id].state = DEAD;
 }
 
 void execute_tasks(Tasks *ts, char* cmd)
@@ -183,15 +182,22 @@ void execute_tasks(Tasks *ts, char* cmd)
 	int id = init_task(ts, cmd);
 	char* tmp = strdup(ts->tasks[id].name);
 	ts->tasks[id].state = ACTIVE;
-	int i = 0;
+	int status;
 	int pid = fork();
 	if(!pid)
 	{
 		parse_execute(ts, id, tmp);
-		_exit(0);
+		_exit(1);
 	}
-	free(tmp);
-	waitpid(-1, NULL, WNOHANG);
+	else
+	{
+		free(tmp);
+		sleep(1);
+		waitpid(pid, &status, WNOHANG);
+		if(WIFEXITED(status))
+			ts->tasks[id].state = DEAD;
+	}
+
 }
 
 void show_finished(Tasks *ts)
@@ -223,7 +229,7 @@ void show_active(Tasks *ts)
 	{
 		if(ts->tasks[i].state == ACTIVE)
 		{
-			if(!i) memset(reply, 0, 1024);
+			memset(reply, 0, 1024);
 			strcat(reply,"#");
 			char id[3];
 			sprintf(id, "%d", ts->tasks[i].id);
@@ -277,7 +283,7 @@ void help_shell(void)
 {
 	char *f[4];
 	
-	char *help = malloc(sizeof(char) * 256);
+	char *help = malloc(sizeof(char) * 512);
 		
 	f[0]="Execute a task -> (OPTION) executar p1 | p2 ... | pn\nDefine pipe-time -> (OPTION) tempo-inactividade <seconds>\n";
 	f[1]="Define task-time -> (OPTION) tempo-execucao <seconds>\nList executing tasks -> (OPTION) listar\n";
@@ -298,7 +304,7 @@ void help_cmd(void)
 	
 	char *f[3];
 
-	char *help = malloc(sizeof(char) * 256);
+	char *help = malloc(sizeof(char) * 512);
 	
 	f[0]="Execute a task -> (OPTION) -e \"p1 | p2 ... | p3\"\nDefine pipe-time -> (OPTION) -i <seconds>\n";
 	f[1]="Define task-time -> -m n\nList executing tasks -> -l\nList finished tasks -> -r\n";

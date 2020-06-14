@@ -102,7 +102,9 @@ void handle_cmd_shell()
 		int n;
 		if((n = parse_cmd(buffer, request)))
 		{
+			printf("|%d|\n", n);
 			send_request(request);
+			printf("|%s|\n", request);
 			if(n == 2)
 			{
 				receive_reply();
