@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define ACTIVE 4
+#define ACTIVE 3
 #define FREE 2
 #define ALIVE 1
 #define DEAD 0

@@ -17,6 +17,7 @@ void write_reply(char* reply)
 {
 	int r = open("reply", O_WRONLY);
 	if(r < 0) perror("FIFO ERROR");
+	printf("%s\n", reply);
 	write(r, reply, strlen(reply));
 	close(r);
 }
@@ -52,8 +53,8 @@ void write_to_files(char *output, int id)
 
 void timeout_task_alarm(int sig)
 {
-	kill(getpid(), SIGTERM);
-	_exit(0);
+	if(sig == SIGTERM)
+		_exit(0);
 }
 
 void timeout_pipe_alarm(int sig)
@@ -62,12 +63,6 @@ void timeout_pipe_alarm(int sig)
 	_exit(0);
 }
 
-void reap_zombies(int sig)
-{
-	int p;
-	int status;
-	while((p = waitpid(-1, &status, WNOHANG))!= -1);
-}
 
 void execute(char *cmds[], int n, int id, int pipeTime)
 {
@@ -194,12 +189,8 @@ void execute_tasks(Tasks *ts, char* cmd)
 {
 	signal(SIGALRM, timeout_task_alarm);
 	signal(SIGALRM, timeout_pipe_alarm);
-	signal(SIGUSR2, reap_zombies);
-	//signal(SIGUSR1, timeout_task_alarm);
-	//signal(SIGINT, timeout_task_alarm);
-
-	int id = init_task(ts, cmd);
-	char* tmp = strdup(ts->tasks[id].name);
+	char* tmp = strdup(cmd);
+	int id = init_task(ts, tmp);
 	ts->tasks[id].state = ACTIVE;
 	int status;
 	int pid = fork();
@@ -210,7 +201,6 @@ void execute_tasks(Tasks *ts, char* cmd)
 	}
 	else
 	{
-		free(tmp);
 		ts->tasks[id].pid = pid;
 		ts->tasks[id].c = CONC;
 		sleep(1);
@@ -238,13 +228,13 @@ void show_finished(Tasks *ts)
 			strcat(reply,id);
 			strcat(reply,", ");
 			if(ts->tasks[i].c==CONC)
-			strcat(reply,"concluida: ");
+				strcat(reply,"concluida: ");
 			else if(ts->tasks[i].c==TERM)
-			strcat(reply,"terminada: ");
+				strcat(reply,"terminada: ");
 			else if(ts->tasks[i].c==TI)
-			strcat(reply,"max inactividade: ");
+				strcat(reply,"max inactividade: ");
 			else if(ts->tasks[i].c==TP)
-			strcat(reply,"max execução: ");
+				strcat(reply,"max execução: ");
 			strcat(reply,ts->tasks[i].name);
 			strcat(reply,"\n");
 		}	
@@ -257,12 +247,10 @@ void show_finished(Tasks *ts)
 void show_active(Tasks *ts)
 {
 	char *reply =(char*)malloc(sizeof(char)*1024);
-	strcat(reply, "NO TASKS RUNNING!");
 	for(int i = 0; i < ts->size; i++)
 	{
 		if(ts->tasks[i].state == ACTIVE)
 		{
-			memset(reply, 0, 1024);
 			strcat(reply,"#");
 			char id[3];
 			sprintf(id, "%d", ts->tasks[i].id);
@@ -306,10 +294,10 @@ void show_output(Tasks *ts, int id)
 			readbytes = atoi(token);
 			flag = 0;
 		}
+		memset(help, 0, 10);
 	}
 	free(help);	
 	close(idx);
-	printf("%d\n", offset);
 	lseek(log, offset, SEEK_SET);
 	char *reply = malloc(sizeof(char) * readbytes);
 	read(log, reply, readbytes);
@@ -362,7 +350,6 @@ void terminate_task(Tasks *ts, int id)
 {
 	if(ts->tasks[id-1].state == ACTIVE)
 	{
-		printf("passei aqui\n");
 		ts->tasks[id-1].state = DEAD;
 		ts->tasks[id-1].c = TERM;
 		kill(ts->tasks[id-1].pid, SIGTERM);

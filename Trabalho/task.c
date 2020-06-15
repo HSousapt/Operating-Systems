@@ -16,7 +16,8 @@ int init_task(Tasks *ts, char* cmd)
 	{
 		if(ts->tasks[i].state == FREE)
 		{
-			ts->tasks[i].name = strdup(cmd);
+
+			ts->tasks[i].name = cmd;
 			ts->tasks[i].id =(i+1);
 			ts->tasks[i].state = ALIVE;
 			ts->tasks[i].pid = 0;

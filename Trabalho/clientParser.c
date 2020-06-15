@@ -43,11 +43,11 @@ void send_request(char *code)
 
 void receive_reply()
 {
-	char* buffer = malloc(sizeof(char*)*1024);
+	char* buffer = malloc(sizeof(char*)*2028);
 	mkfifo("reply", 0700);
 	int reply = open("reply", O_RDONLY);
 	if(reply < 0) perror("FIFO ERROR");
-	/*while(*/readln(reply, buffer);//)
+	while(readln(reply, buffer))
 		printf("%s\n", buffer);
 	free(buffer);
 	close(reply);

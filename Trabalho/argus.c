@@ -13,19 +13,17 @@ int main(int argc, char **argv)
 		{
 			int fd = open(argv[2], O_RDONLY, 0700);
 			if(fd < 0) perror("FILE ERROR");
-			char *buffer = malloc(sizeof(char) * 50);
+			char *buffer = malloc(sizeof(char) * 128);
 			while(readln(fd, buffer))
 			{
 				int i = 0;
-				int n = count_words(buffer);
-				char **input =(char**)malloc(sizeof(char*)*n+1);
+				int n = 1;
+				char **input =(char**)malloc(sizeof(char*)*3);
 				char *token= strtok(buffer, " ");
 				input[i++] = token ;
-				while(token)
-				{
-					token = strtok(NULL, " ");
-					input[i++] = token;
-				}
+				if(!strcmp(token, "-e") || !strcmp(token, "-t") || !strcmp(token, "-i") || !strcmp(token, "-m") || !strcmp(token, "-o")){
+					input[i] = buffer + 3;
+					n = 2;}
 				handle_cmd_line(input, n);
 				free(input);
 				memset(buffer, 0, 50);
