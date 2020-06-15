@@ -210,7 +210,7 @@ void execute_tasks(Tasks *ts, char* cmd)
 	else
 	{
 		ts->tasks[id].pid = pid;
-		sleep(1);
+		sleep(2);
 		int st = waitpid(pid, NULL, WNOHANG);
 		if(st > 0)
 		{

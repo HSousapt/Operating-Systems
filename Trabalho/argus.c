@@ -16,8 +16,6 @@ int main(int argc, char **argv)
 			char *buffer = malloc(sizeof(char) * 128);
 			while(readln(fd, buffer))
 			{
-				int j = 1;
-				printf("%d - > %s\n", j++, buffer);
 				int i = 0;
 				int n = 1;
 				char **input =(char**)malloc(sizeof(char*)*3);

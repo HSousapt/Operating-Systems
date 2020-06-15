@@ -1,11 +1,6 @@
 #include "requestHandler.h"
 #define MAXBUFF 120
 
-void handle_sigchld(int sig) {
-	int saved_errno = errno;
-	while (waitpid(-1, 0, WNOHANG | WUNTRACED) > 0)
-  	errno = saved_errno;
-}
 
 int main(int argc, char **argv)
 {
@@ -29,7 +24,7 @@ int main(int argc, char **argv)
 		close(request);
 		handle_client_request(buffer, &tasks);
 		memset(buffer, 0, MAXBUFF);
-		signal(SIGCHLD, handle_sigchld);
+		waitpid(-1, NULL, WNOHANG | WUNTRACED);
 	}
 	unlink("request");
 	return 0;
