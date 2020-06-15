@@ -1,12 +1,11 @@
--i 5
--e cat
--e ls
+-e cut -f7 -d: /etc/passwd | uniq | wc -l
+-e cat | cat
 -e ls -l
--l
--e ls -l | wc
 -e ls -l | sort | wc -l
 -r
--o 2
+-l
+-t 2
+-e date
 -o 3
 -o 4
--o 5
+-r

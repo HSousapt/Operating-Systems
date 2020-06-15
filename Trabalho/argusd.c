@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 	mkfifo("reply", 0700);
 	char* buffer = malloc(sizeof(char)*MAXBUFF);
 
-	Tasks tasks = init_tasks(10);
+	Tasks tasks = init_tasks(25);
 	while(1)
 	{
 

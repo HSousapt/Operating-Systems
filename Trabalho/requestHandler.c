@@ -58,9 +58,11 @@ void write_to_files(char *output, int id)
 
 void timeout_task_alarm(int sig)
 {
+	
+	printf("%d",getpid());
 	kill(getpid(), SIGKILL);
-	write(1, "PASSOU O TEMPO\n", 15);
-	_exit(0);
+	//write(1, "PASSOU O TEMPO\n", 15);
+	//_exit(0);
 }
 
 void timeout_pipe_alarm(int sig)
@@ -69,8 +71,20 @@ void timeout_pipe_alarm(int sig)
 	_exit(0);
 }
 
+int *pids;
+int N=0;
 
-void execute(char *cmds[], int n, int id, int pipeTime)
+void handle_alarm(int sig)
+{
+	printf("%d",N);
+	write(1, "PASSOU O TEMPO\n", 15);
+//	for(int i =0;i<N;i++){
+		kill(getpid(), SIGKILL);
+//	}
+}
+
+
+void execute(char *cmds[], int n, int id, int pipeTime, int taskTime)
 {
 	int fd[n][2];
 	int pids[n];
@@ -137,9 +151,13 @@ void execute(char *cmds[], int n, int id, int pipeTime)
 		}
 	}
 
-//	Waits for all Children (dont know if needed yet);
-//	for(int k = 0; k < n; k++)
-//		waitpid(-1, NULL, 0);
+	if(signal(SIGALRM, handle_alarm)== SIG_ERR)
+	{
+		perror("SIGALRM failed2");
+	}
+		
+	alarm(taskTime);
+
 
 	//Father reads the result from the last pipe
 	for(int k = 0; k < n; k++)
@@ -189,13 +207,13 @@ void parse_execute(Tasks *ts, int id, char* tmp)
 	{
 		alarm(ts->taskTime);
 	}
-	execute(cmds, n, id, ts->pipeTime);
+	execute(cmds, n, id, ts->pipeTime, ts->taskTime);
 }
 
 void execute_tasks(Tasks *ts, char* cmd)
 {
-	signal(SIGALRM, timeout_task_alarm);
-	signal(SIGALRM, timeout_pipe_alarm);
+	//signal(SIGALRM, timeout_task_alarm);
+	//signal(SIGALRM, timeout_pipe_alarm);
 	//signal(SIGCHLD, handle_sigchld);
 	//char* tmp = strdup(cmd);
 	int id = init_task(ts, cmd);
@@ -211,14 +229,12 @@ void execute_tasks(Tasks *ts, char* cmd)
 	{
 		ts->tasks[id].pid = pid;
 		sleep(2);
-		int st = waitpid(pid, NULL, WNOHANG);
-		if(st > 0)
+		status = waitpid(-1, NULL, WNOHANG);
+		if(status > 0)
 		{
 			ts->tasks[id].state = DEAD;
 			ts->tasks[id].c = CONC;
 		}
-//		else
-//			kill(getppid(), SIGUSR2);
 	}
 
 }
@@ -359,7 +375,7 @@ void terminate_task(Tasks *ts, int id)
 	{
 		ts->tasks[id-1].state = DEAD;
 		ts->tasks[id-1].c = TERM;
-		kill(ts->tasks[id-1].pid, SIGTERM);
+		kill(ts->tasks[id-1].pid, SIGKILL);
 	}
 }
 
@@ -409,6 +425,6 @@ void handle_client_request(char* request, Tasks *tasks)
 	}
 	else
 	{
-		printf("COMMAND ERRO");
+		write_reply("COMMAND ERROR");
 	}
 }
