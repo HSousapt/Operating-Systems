@@ -13,6 +13,12 @@ ssize_t readln(int f,char* buff)
 	return (r==-1)?-1:n;
 }
 
+/*void handle_sigchld(int sig) {
+	int saved_errno = errno;
+	while (waitpid(-1, 0, WNOHANG) > 0)
+  	errno = saved_errno;
+}*/
+
 void write_reply(char* reply)
 {
 	int r = open("reply", O_WRONLY);
@@ -53,6 +59,7 @@ void write_to_files(char *output, int id)
 void timeout_task_alarm(int sig)
 {
 	kill(getpid(), SIGKILL);
+	write(1, "PASSOU O TEMPO\n", 15);
 	_exit(0);
 }
 
@@ -65,7 +72,6 @@ void timeout_pipe_alarm(int sig)
 
 void execute(char *cmds[], int n, int id, int pipeTime)
 {
-	for(int i = 0; i < n; i++) printf("->>%s | %d\n", cmds[i], n);
 	int fd[n][2];
 	int pids[n];
 	char *reply =(char*)malloc(sizeof(char) * 30);
@@ -123,8 +129,8 @@ void execute(char *cmds[], int n, int id, int pipeTime)
 				close(fd[k][0]);
 				close(fd[k][1]);
 			}
-			if(pipeTime > 0)
-				alarm(pipeTime);
+			//if(pipeTime > 0)
+			//	alarm(pipeTime);
 			if(execvp(args[0], args) < 0)
 				perror("EXEC ERROR!\n");
 			_exit(0);
@@ -133,7 +139,7 @@ void execute(char *cmds[], int n, int id, int pipeTime)
 
 //	Waits for all Children (dont know if needed yet);
 //	for(int k = 0; k < n; k++)
-//		waitpid(pids[k], NULL, 0);
+//		waitpid(-1, NULL, 0);
 
 	//Father reads the result from the last pipe
 	for(int k = 0; k < n; k++)
@@ -153,7 +159,6 @@ void execute(char *cmds[], int n, int id, int pipeTime)
 				strcat(result, "\n");
 			}
 			write_to_files(result, id);
-			sleep(1);
 			free(aux);
 			free(result);
 		}
@@ -191,6 +196,7 @@ void execute_tasks(Tasks *ts, char* cmd)
 {
 	signal(SIGALRM, timeout_task_alarm);
 	signal(SIGALRM, timeout_pipe_alarm);
+	//signal(SIGCHLD, handle_sigchld);
 	//char* tmp = strdup(cmd);
 	int id = init_task(ts, cmd);
 	ts->tasks[id].state = ACTIVE;
@@ -204,12 +210,12 @@ void execute_tasks(Tasks *ts, char* cmd)
 	else
 	{
 		ts->tasks[id].pid = pid;
-		ts->tasks[id].c = CONC;
 		sleep(1);
-		waitpid(pid, &status, WNOHANG);
-		if(WIFEXITED(status))
+		int st = waitpid(pid, NULL, WNOHANG);
+		if(st > 0)
 		{
 			ts->tasks[id].state = DEAD;
+			ts->tasks[id].c = CONC;
 		}
 //		else
 //			kill(getppid(), SIGUSR2);
