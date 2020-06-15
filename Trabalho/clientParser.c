@@ -38,6 +38,7 @@ void send_request(char *code)
 	request = open("request",O_WRONLY);
 	if(request < 0) perror("ERROR");
 	write(request,code,strlen(code));
+	printf("%s\n", code);
 	close(request);
 }
 
@@ -146,8 +147,11 @@ void handle_cmd_line(char **cmds, int n)
 	}
 	if(!strcmp(cmds[0]+1, "e") || !strcmp(cmds[0]+1, "r") ||!strcmp(cmds[0]+1, "l") ||!strcmp(cmds[0]+1, "h") ||!strcmp(cmds[0]+1, "o"))flag = 1;
 	request[strlen(request)-1] = '\0';
+	printf("%s\n", request);
 	send_request(request);
 	free(request);
 	if(flag)
 		receive_reply();
+	else
+		sleep(1);
 }

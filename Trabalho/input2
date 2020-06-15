@@ -1,0 +1,9 @@
+-e ls
+-e ls -l
+-e ls -l | wc
+-e ls -l | sort | wc -l
+-r
+-o 1
+-o 2
+-o 3
+-o 4

@@ -16,14 +16,18 @@ int main(int argc, char **argv)
 			char *buffer = malloc(sizeof(char) * 128);
 			while(readln(fd, buffer))
 			{
+				int j = 1;
+				printf("%d - > %s\n", j++, buffer);
 				int i = 0;
 				int n = 1;
 				char **input =(char**)malloc(sizeof(char*)*3);
 				char *token= strtok(buffer, " ");
 				input[i++] = token ;
-				if(!strcmp(token, "-e") || !strcmp(token, "-t") || !strcmp(token, "-i") || !strcmp(token, "-m") || !strcmp(token, "-o")){
+				if(!strcmp(token, "-e") || !strcmp(token, "-t") || !strcmp(token, "-i") || !strcmp(token, "-m") || !strcmp(token, "-o"))
+				{
 					input[i] = buffer + 3;
-					n = 2;}
+					n = 2;
+				}
 				handle_cmd_line(input, n);
 				free(input);
 				memset(buffer, 0, 50);

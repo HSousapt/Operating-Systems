@@ -17,7 +17,6 @@ void write_reply(char* reply)
 {
 	int r = open("reply", O_WRONLY);
 	if(r < 0) perror("FIFO ERROR");
-	printf("%s\n", reply);
 	write(r, reply, strlen(reply));
 	close(r);
 }
@@ -53,8 +52,8 @@ void write_to_files(char *output, int id)
 
 void timeout_task_alarm(int sig)
 {
-	if(sig == SIGTERM)
-		_exit(0);
+	kill(getpid(), SIGKILL);
+	_exit(0);
 }
 
 void timeout_pipe_alarm(int sig)
@@ -66,6 +65,7 @@ void timeout_pipe_alarm(int sig)
 
 void execute(char *cmds[], int n, int id, int pipeTime)
 {
+	for(int i = 0; i < n; i++) printf("->>%s | %d\n", cmds[i], n);
 	int fd[n][2];
 	int pids[n];
 	char *reply =(char*)malloc(sizeof(char) * 30);
@@ -140,7 +140,7 @@ void execute(char *cmds[], int n, int id, int pipeTime)
 	{
 		if(k == n-1)
 		{
-			char* result =(char*) malloc(sizeof(char)*2048);
+			char* result =(char*)malloc(sizeof(char)*2048);
 			char* aux =(char*)malloc(sizeof(char)*2048);
 			close(fd[k][1]);
 			if(dup2(fd[k][0], 0))
@@ -153,13 +153,15 @@ void execute(char *cmds[], int n, int id, int pipeTime)
 				strcat(result, "\n");
 			}
 			write_to_files(result, id);
+			sleep(1);
+			free(aux);
 			free(result);
 		}
-//		else
-//		{
+		else
+		{
 			close(fd[k][0]);
 			close(fd[k][1]);
-//		}
+		}
 	}
 //	Waits for all Children (dont know if needed yet);
 	for(int k = 0; k < n; k++)
@@ -189,15 +191,15 @@ void execute_tasks(Tasks *ts, char* cmd)
 {
 	signal(SIGALRM, timeout_task_alarm);
 	signal(SIGALRM, timeout_pipe_alarm);
-	char* tmp = strdup(cmd);
-	int id = init_task(ts, tmp);
+	//char* tmp = strdup(cmd);
+	int id = init_task(ts, cmd);
 	ts->tasks[id].state = ACTIVE;
 	int status;
 	int pid = fork();
 	if(!pid)
 	{
-		parse_execute(ts, id, tmp);
-		_exit(1);
+		parse_execute(ts, id, cmd);
+		_exit(0);
 	}
 	else
 	{
@@ -301,7 +303,6 @@ void show_output(Tasks *ts, int id)
 	lseek(log, offset, SEEK_SET);
 	char *reply = malloc(sizeof(char) * readbytes);
 	read(log, reply, readbytes);
-	printf("%s\n", reply);
 	write_reply(reply);
 	free(reply);
 	close(log);
@@ -360,7 +361,6 @@ void terminate_task(Tasks *ts, int id)
 void handle_client_request(char* request, Tasks *tasks)
 {
 	char* cmd = strtok(request, " ");
-	
 	if(!strcmp(cmd, "-i"))
 	{
 		int time = atoi(strtok(NULL, " "));
